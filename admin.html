@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Alexander Okoro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen">
+  <div class="max-w-6xl mx-auto p-6 md:p-10">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-10">
+      <div>
+        <h1 class="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p class="text-zinc-500 dark:text-zinc-400">Manage Portfolio Projects</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <button onclick="toggleDarkMode()" 
+                class="p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
+          <i class="fas fa-moon text-xl dark:hidden"></i>
+          <i class="fas fa-sun text-xl hidden dark:block"></i>
+        </button>
+        <a href="index.html" 
+           class="flex items-center gap-3 px-6 py-4 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-2xl font-medium hover:scale-105 transition">
+          ← Back to Portfolio
+        </a>
+      </div>
+    </div>
+
+    <!-- Add / Edit Form -->
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8 mb-12">
+      <h2 class="text-2xl font-semibold mb-6" id="formTitle">Add New Project</h2>
+      
+      <form id="projectForm" class="grid md:grid-cols-2 gap-6">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-2">Project Title</label>
+          <input type="text" id="title" required
+                 class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Category</label>
+          <input type="text" id="category" placeholder="Fintech, Agriculture, SaaS..." required
+                 class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Year</label>
+          <input type="text" id="year" placeholder="2025" required
+                 class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Image URL</label>
+          <input type="url" id="image" required
+                 class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Live Link (optional)</label>
+          <input type="url" id="link"
+                 class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-2">Tags (comma separated)</label>
+          <input type="text" id="tags" placeholder="Figma, Webflow, Mobile, Dashboard"
+                 class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-2">Description</label>
+          <textarea id="description" rows="5" required
+                    class="w-full px-5 py-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-transparent focus:outline-none focus:border-blue-600"></textarea>
+        </div>
+
+        <div class="md:col-span-2 flex gap-4">
+          <button type="submit" id="submitBtn"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-semibold transition">
+            Add Project
+          </button>
+          <button type="button" onclick="resetForm()"
+                  class="px-8 py-5 border border-zinc-300 dark:border-zinc-700 rounded-2xl font-medium">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Projects List -->
+    <h2 class="text-2xl font-semibold mb-6">All Projects</h2>
+    <div id="projectsList" class="grid md:grid-cols-2 gap-6"></div>
+  </div>
+
+  <script>
+    let editingId = null;
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+
+    async function loadProjects() {
+      const res = await fetch('/api/projects');
+      const projects = await res.json();
+      
+      const container = document.getElementById('projectsList');
+      container.innerHTML = '';
+
+      projects.forEach(project => {
+        const card = document.createElement('div');
+        card.className = "bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow border border-zinc-100 dark:border-zinc-800";
+        card.innerHTML = `
+          <img src="${project.image}" alt="${project.title}" class="w-full h-48 object-cover">
+          <div class="p-6">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-semibold text-lg">${project.title}</h3>
+                <p class="text-sm text-blue-600 dark:text-blue-400">${project.category} • ${project.year}</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="editProject(${project.id})" 
+                        class="p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteProject(${project.id})" 
+                        class="p-3 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 rounded-xl">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-3 line-clamp-3">${project.description}</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              ${(project.tags || '').split(',').map(tag => 
+                `<span class="text-xs bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">${tag.trim()}</span>`
+              ).join('')}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function deleteProject(id) {
+      if (confirm('Delete this project?')) {
+        await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+        loadProjects();
+      }
+    }
+
+    window.editProject = async function(id) {
+      const res = await fetch('/api/projects');
+      const projects = await res.json();
+      const project = projects.find(p => p.id === id);
+
+      if (project) {
+        editingId = id;
+        document.getElementById('formTitle').textContent = 'Edit Project';
+        document.getElementById('submitBtn').textContent = 'Update Project';
+
+        document.getElementById('title').value = project.title;
+        document.getElementById('category').value = project.category;
+        document.getElementById('year').value = project.year;
+        document.getElementById('image').value = project.image;
+        document.getElementById('link').value = project.link || '';
+        document.getElementById('tags').value = project.tags || '';
+        document.getElementById('description').value = project.description;
+      }
+    };
+
+    function resetForm() {
+      editingId = null;
+      document.getElementById('projectForm').reset();
+      document.getElementById('formTitle').textContent = 'Add New Project';
+      document.getElementById('submitBtn').textContent = 'Add Project';
+    }
+
+    // Form Submit
+    document.getElementById('projectForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const projectData = {
+        title: document.getElementById('title').value,
+        category: document.getElementById('category').value,
+        year: document.getElementById('year').value,
+        image: document.getElementById('image').value,
+        link: document.getElementById('link').value,
+        tags: document.getElementById('tags').value,
+        description: document.getElementById('description').value
+      };
+
+      if (editingId) {
+        await fetch(`/api/projects/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(projectData)
+        });
+      } else {
+        await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(projectData)
+        });
+      }
+
+      resetForm();
+      loadProjects();
+    });
+
+    // Load projects on page load
+    window.onload = loadProjects;
+  </script>
+</body>
+</html>
